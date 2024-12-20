@@ -5,6 +5,11 @@ app_description = "This app contains accounting customizations"
 app_email = "Mernakhalill877@gmail.com"
 app_license = "mit"
 
+
+fixtures = [
+"Property Setter",
+"Custom Field"
+]
 # Apps
 # ------------------
 
@@ -43,7 +48,7 @@ app_license = "mit"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+# doctype_js = {"Payment Entry" : "doctype_triggers/accounting/payment_entry/payment_entry.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
