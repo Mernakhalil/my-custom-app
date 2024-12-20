@@ -1,15 +1,18 @@
-// Trigger when the item code is selected or changed in the Sales Invoice Item row
+// Copyright (c) 2024, Merna and contributors
+// For license information, please see license.txt
+
+// Triggered when the item_code is selected/changed in the Sales Invoice Item table
 frappe.ui.form.on("Sales Invoice Item", {
     item_code: function (frm, cdt, cdn) {
         let row = locals[cdt][cdn];
 
-        // Ensure a customer is specified before selecting an item
+        // Ensure that the customer is selected before proceeding
         if (!frm.doc.customer) {
             frappe.throw(__("Please specify a customer before selecting an item."));
         }
 
+        // If item_code is selected, fetch item details based on the customer and item code
         if (row.item_code) {
-            // Fetch item details based on customer and item code
             frappe.call({
                 method: "my_custom_app.my_custom_app.doctype.custom_sales_invoice.custom_sales_invoice.get_item_details", 
                 args: {
@@ -17,8 +20,9 @@ frappe.ui.form.on("Sales Invoice Item", {
                     item_code: row.item_code
                 },
                 callback: function (response) {
+                    console.log(response.message)
                     if (response.message) {
-                        // Update the fields in the child table with the fetched item details
+                        // Update fields in the child table with fetched item details
                         frappe.model.set_value(cdt, cdn, "rate", response.message.price_list_rate);
                         frappe.model.set_value(cdt, cdn, "base_rate", response.message.price_list_rate);
                         frappe.model.set_value(cdt, cdn, "price_list_rate", response.message.price_list_rate);
@@ -27,8 +31,8 @@ frappe.ui.form.on("Sales Invoice Item", {
                         frappe.model.set_value(cdt, cdn, "item_name", response.message.item_name);
                         frappe.model.set_value(cdt, cdn, "income_account", response.message.income_account);
                         frappe.model.set_value(cdt, cdn, "cost_center", response.message.cost_center);
-                        frappe.model.set_value(cdt, cdn, "qty", 1); // Set default quantity to 1
-                        frappe.model.set_value(cdt, cdn, "base_price_list_rate", response.message.price_list_rate); // Set base price rate
+                        frappe.model.set_value(cdt, cdn, "qty", 1);  // Default quantity is set to 1
+                        frappe.model.set_value(cdt, cdn, "base_price_list_rate", response.message.price_list_rate);
                     }
                 }
             });
@@ -36,92 +40,93 @@ frappe.ui.form.on("Sales Invoice Item", {
     }
 });
 
-// Trigger when the UOM (Unit of Measure) is changed in the Sales Invoice Item row
+// Triggered when UOM is changed in the Sales Invoice Item table
 frappe.ui.form.on("Sales Invoice Item", {
     uom: function (frm, cdt, cdn) {
         let row = locals[cdt][cdn];
 
-        // Ensure a customer is specified before selecting an item
+        // Ensure that the customer is selected before proceeding
         if (!frm.doc.customer) {
             frappe.throw(__("Please specify a customer before selecting an item."));
         }
 
-        if (row.item_code) {
-            // If UOM is the same as stock_uom, set conversion factor to 1
-            if (row.uom === row.stock_uom) {
-                frappe.model.set_value(cdt, cdn, "conversion_factor", 1);
-            } else {
-                // Fetch the conversion factor for the item
-                frappe.call({
-                    method: "frappe.client.get",
-                    args: {
-                        doctype: "Item UOM",
-                        filters: {
-                            parent: row.item_code,
-                            uom: row.uom
-                        }
-                    },
-                    callback: function (response) {
-                        if (response.message) {
-                            // If conversion factor exists, set it; otherwise, set to 1
-                            let conversion_factor = response.message.conversion_factor || 1;
-                            frappe.model.set_value(cdt, cdn, "conversion_factor", conversion_factor);
-                        } else {
-                            // Set conversion factor to 1 if not found
-                            frappe.model.set_value(cdt, cdn, "conversion_factor", 1);
-                        }
+        // If UOM is same as stock_uom, set conversion factor to 1
+        if (row.uom === row.stock_uom) {
+            frappe.model.set_value(cdt, cdn, "conversion_factor", 1);
+        } else {
+            // Fetch the conversion factor for the selected item and UOM
+            frappe.call({
+                method: "frappe.client.get",
+                args: {
+                    doctype: "Item UOM",
+                    filters: {
+                        parent: row.item_code,
+                        uom: row.uom
                     }
-                });
-            }
+                },
+                callback: function (response) {
+                    if (response.message) {
+                        // If conversion factor exists, set it; otherwise, default to 1
+                        let conversion_factor = response.message.conversion_factor || 1;
+                        frappe.model.set_value(cdt, cdn, "conversion_factor", conversion_factor);
+                    } else {
+                        // If no conversion factor is found, set it to 1
+                        frappe.model.set_value(cdt, cdn, "conversion_factor", 1);
+                    }
+                }
+            });
         }
     }
 });
 
-// Trigger when quantity is changed in the Sales Invoice Item row
+// Triggered when quantity is changed in the Sales Invoice Item table
 frappe.ui.form.on("Sales Invoice Item", {
     qty: function (frm, cdt, cdn) {
         let row = locals[cdt][cdn];
 
-        // Ensure a customer is specified before selecting an item
+        // Ensure that the customer is selected before proceeding
         if (!frm.doc.customer) {
             frappe.throw(__("Please specify a customer before selecting an item."));
         }
 
+        // If item_code and rate are available, calculate the amount based on qty and rate
         if (row.item_code && row.rate) {
-            // Recalculate the amount based on qty and rate
             frappe.model.set_value(cdt, cdn, "amount", row.qty * row.rate);
             frappe.model.set_value(cdt, cdn, "base_amount", row.qty * row.rate);
         }
     }
 });
 
-// Trigger when rate is changed in the Sales Invoice Item row
+// Triggered when rate is changed in the Sales Invoice Item table
 frappe.ui.form.on("Sales Invoice Item", {
     rate: function (frm, cdt, cdn) {
         let row = locals[cdt][cdn];
 
-        // Ensure a customer is specified before selecting an item
+        // Ensure that the customer is selected before proceeding
         if (!frm.doc.customer) {
             frappe.throw(__("Please specify a customer before selecting an item."));
         }
 
+        // If item_code and rate are available, calculate the amount based on qty and rate
         if (row.item_code && row.rate) {
-            // Recalculate the amount based on qty and rate
             frappe.model.set_value(cdt, cdn, "amount", row.qty * row.rate);
             frappe.model.set_value(cdt, cdn, "base_amount", row.qty * row.rate);
-            frappe.model.set_value(cdt, cdn, "base_rate", row.rate); // Set base rate
+            frappe.model.set_value(cdt, cdn, "base_rate", row.rate);  // Update base rate
         }
     }
 });
 
-// Trigger when the currency field in the Sales Invoice is changed
+// Triggered when currency is changed in the Custom Sales Invoice form
 frappe.ui.form.on("Custom Sales Invoice", {
     currency: function (frm) {
+        // If a customer is specified, fetch the customer's default currency
         if (frm.doc.customer) {
-            // Fetch the default currency of the customer
             frappe.db.get_value("Customer", frm.doc.customer, "default_currency", function(r) {
                 if (r && r.default_currency) {
-                    // Fetch exchange rate based on transaction date and currencies
+                    // Log the customer's default currency
+                    console.log("Customer's Default Currency: ", r.default_currency);
+                    
+                    // Fetch exchange rate between the selected currency and the customer's default currency
                     frappe.call({
                         method: "erpnext.setup.utils.get_exchange_rate",
                         args: {
@@ -131,7 +136,7 @@ frappe.ui.form.on("Custom Sales Invoice", {
                         },
                         callback: function (response) {
                             if (response.message) {
-                                frm.set_value("conversion_rate", response.message); // Set the conversion rate
+                                frm.set_value("conversion_rate", response.message);  // Set conversion rate
                             }
                         }
                     });
@@ -141,33 +146,48 @@ frappe.ui.form.on("Custom Sales Invoice", {
     }
 });
 
-// Trigger when the form is loaded or refreshed to update the total rate
+// Triggered on form refresh for the Custom Sales Invoice
 frappe.ui.form.on("Custom Sales Invoice", {
     refresh: function(frm) {
+        // Update total rate when the form is refreshed
         update_total_rate(frm);
     }
 });
 
-// Trigger when rate or item_code is changed in Sales Invoice Item
+// Triggered when rate or item_code is changed in the Sales Invoice Item table
 frappe.ui.form.on("Sales Invoice Item", {
     rate: function(frm, cdt, cdn) {
+        // Trigger total rate update when rate changes
         update_total_rate(frm);
     },
     item_code: function(frm, cdt, cdn) {
+        // Trigger total rate update when item_code changes
         update_total_rate(frm);
     }
 });
 
-// Function to update the total rate (grand total)
+// Triggered when item_code is validated in the Sales Invoice Item table
+frappe.ui.form.on("Sales Invoice Item", {
+    validate: function(frm, cdt, cdn) {
+        // Example: show a message on validate (you can replace this with any logic)
+        frappe.msgprint("js validate");
+    },
+    item_code: function(frm, cdt, cdn) {
+        // Trigger total rate update when item_code changes
+        update_total_rate(frm);
+    }
+});
+
+// Function to update the total rate (used in several places)
 function update_total_rate(frm) {
     let total_rate = 0;
     
     // Loop through the child table items and sum the rates
     $.each(frm.doc.items || [], function(i, row) {
-        total_rate += row.rate || 0; // Sum up the rates
+        total_rate += row.rate || 0;  // Accumulate rate
     });
     
-    // Set the total rate to the form's fields
+    // Set the total rate in the form fields
     frm.set_value("base_net_total", total_rate);
     frm.set_value("base_grand_total", total_rate);
     frm.set_value("grand_total", total_rate);
@@ -198,8 +218,6 @@ frappe.ui.form.on('Custom Sales Invoice', {
                 ],
                 primary_action_label: 'Submit Payment Entry',
                 primary_action: function (data) {
-                    dialog.hide();
-
                     // Call the server-side method to create the Payment Entry
                     frappe.call({
                         method: 'my_custom_app.my_custom_app.doctype.custom_sales_invoice.custom_sales_invoice.create_payment_entry',
@@ -213,7 +231,8 @@ frappe.ui.form.on('Custom Sales Invoice', {
                                 if (r.message.error) {
                                     // Show the error message from the server
                                     frappe.msgprint(r.message.error);
-                                    dialog.show(); // Show the dialog again to allow user to correct
+                                    // Do not hide the dialog so the user can correct the data
+                                    dialog.show();
                                     reject();
                                 } else {
                                     // Payment Entry created successfully
@@ -237,12 +256,5 @@ frappe.ui.form.on('Custom Sales Invoice', {
 
         // Wait for the promise to resolve
         await promise;
-
-        // Submit the invoice after payment entry is created and promise resolves
-        frm.submit();
     },
-
-    on_submit: function (frm) {
-        frappe.msgprint(__('Sales Invoice successfully submitted.'));
-    }
 });

@@ -120,3 +120,24 @@ def create_payment_entry(sales_invoice, mode_of_payment, amount):
         sales_invoice_doc.save()
 
     return payment_entry.name
+
+# Function to get item details based on customer and item code
+@frappe.whitelist()
+def get_item_details(customer,item_code):
+    # Fetch the Item document
+    item = frappe.get_doc("Item", item_code)
+    
+    # Fetch Item Default details
+    item_defaults = item.get("item_defaults", [{}])[0] if item.item_defaults else {}
+    
+    # Fetch price list rate
+    price_list = frappe.db.get_value("Customer", {"name": customer}, "default_price_list")
+    price_list_rate = frappe.db.get_value("Item Price", {"item_code": item_code, "price_list": price_list}, "price_list_rate")
+    
+    return {
+        "item_name": item.item_name,
+        "uom": item.stock_uom,
+        "price_list_rate": price_list_rate,
+        "income_account": item_defaults.get("income_account"),
+        "cost_center": item_defaults.get("selling_cost_center")
+    }
