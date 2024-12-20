@@ -153,23 +153,23 @@ fixtures = [
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"my_custom_app.tasks.all"
-# 	],
-# 	"daily": [
-# 		"my_custom_app.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"my_custom_app.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"my_custom_app.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"my_custom_app.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	# "all": [
+	# 	"my_custom_app.tasks.all"
+	# ],
+	"daily": [
+		"my_custom_app.scheduler_events.daily.daily"
+	],
+	# "hourly": [
+	# 	"my_custom_app.tasks.hourly"
+	# ],
+	# "weekly": [
+	# 	"my_custom_app.tasks.weekly"
+	# ],
+	# "monthly": [
+	# 	"my_custom_app.tasks.monthly"
+	# ],
+}
 
 # Testing
 # -------
